@@ -1,0 +1,26 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/gcp-vm-key
+          chmod 600 ~/.ssh/gcp-vm-key
+          ssh-keyscan -H ${{ secrets.SSH_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy script on VPS
+        run: ssh -o StrictHostKeyChecking=no -i ~/.ssh/gcp-vm-key trungkien@${{ secrets.SSH_IP }} 'bash /home/trungkien/deploy_websocket.sh'
+
+# again3
