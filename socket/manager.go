@@ -13,11 +13,35 @@ import (
 )
 
 var roomStore sync.Map // map[string]map[*websocket.Conn]int
+var roomNoti sync.Map
 
 func GenerateChatRoomID(postOwnerID uint, senderID uint) string {
 	return "chat:postOwner:" + strconv.Itoa(int(postOwnerID)) + ":user:" + strconv.Itoa(int(senderID))
 }
 
+func GenerateChatNotiRoomID(senderID uint) string {
+	return "chatNoti:user:" + strconv.Itoa(int(senderID))
+}
+
+// Hàm tạo room public chat noti cho mỗi user
+func RegisterConnectionToRoomChatNoti(roomID string, conn *websocket.Conn) {
+	//Lấy ra mảng của roomID, nếu chưa thì tạo
+	_, loaded := roomNoti.LoadOrStore(roomID, conn)
+
+	if loaded {
+		fmt.Println("---Room đã tồn tại: " + roomID)
+	} else {
+		fmt.Println("---Tạo room thành công: " + roomID)
+	}
+}
+
+// Hàm xóa room public chat noti
+func RemoveConnectionFromRoomChatNoti(roomID string) {
+	roomStore.Delete(roomID)
+	fmt.Println("---Xóa room: " + roomID)
+}
+
+// Hàm tạo room chat 1-1
 func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) {
 	//Lấy ra mảng của roomID, nếu chưa thì tạo
 	val, _ := roomStore.LoadOrStore(roomID, &sync.Map{})
@@ -29,6 +53,7 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 	fmt.Println("---Tạo room: " + roomID)
 }
 
+// Hàm xóa user khỏi room chat, nếu không còn user -> xóa room chat
 func RemoveConnectionFromAllRooms(conn *websocket.Conn) {
 	//Lặp qua 1 mảng các room
 	roomStore.Range(func(key, value any) bool {
@@ -54,6 +79,41 @@ func RemoveConnectionFromAllRooms(conn *websocket.Conn) {
 	})
 }
 
+// Hàm xử lí chat 1-1
+func SendPublicMessageHandler(conn *websocket.Conn, senderID uint) {
+	//Hàm hủy chạy sau khi hàm chính kết thúc
+	defer func() {
+		fmt.Printf("Đóng kết nối user %d\n", senderID)
+		RemoveConnectionFromAllRooms(conn)
+		conn.Close()
+	}()
+
+	// Join room
+	roomID := GenerateChatNotiRoomID(senderID)
+
+	response := model.EventResponse{
+		Event:  "join_noti_room_response",
+		Status: "success",
+		Data: model.JoinRoomDataResponse{
+			RoomID:    roomID,
+			TimeStamp: time.Now(),
+		},
+	}
+
+	RegisterConnectionToRoomChatNoti(roomID, conn)
+
+	sendMessageNoti(roomID, response)
+
+	for {
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			fmt.Println("Error:", err)
+			break
+		}
+	}
+}
+
+// Hàm xử lí chat 1-1
 func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 	//Hàm hủy chạy sau khi hàm chính kết thúc
 	defer func() {
@@ -110,6 +170,28 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 				}
 
 				sendMessageOther(roomID, senderID, response)
+
+				roomNoti := GenerateChatNotiRoomID(data.UserID)
+
+				notiType := ""
+
+				if data.IsOwner {
+					notiType = "following"
+				} else {
+					notiType = "followedBy"
+				}
+
+				notiResponse := model.EventResponse{
+					Event:  "send_message_response",
+					Status: "success",
+					Data: model.SendMessageNotiDataResponse{
+						Type:      notiType,
+						UserID:    data.UserID,
+						TimeStamp: time.Now(),
+					},
+				}
+
+				sendMessageNoti(roomNoti, notiResponse)
 			}
 
 		case "join_room":
@@ -178,6 +260,38 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 	}
 }
 
+// Hàm gửi tin nhắn đến thông báo của user khác
+func sendMessageNoti(roomID string, response model.EventResponse) {
+	//Kiểm tra room có tồn tại hay không
+	val, ok := roomNoti.Load(roomID)
+	if !ok {
+		fmt.Println("Room not found:", roomID)
+		return
+	}
+
+	conn := val.(*websocket.Conn)
+
+	fmt.Println("---Gửi tin nhắn thông báo đến:", roomID)
+
+	//Ép thành JSON
+	data, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println("Marshal error:", err)
+		return
+	}
+
+	fmt.Println("Tìm thấy room:", roomID)
+	fmt.Println("Gửi tin nhắn thông báo:", string(data))
+
+	if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+		fmt.Println("Send error", ":", err)
+	}
+
+	fmt.Println("---Gửi tin nhắn thông báo xong---")
+	fmt.Println("")
+}
+
+// Hàm gửi tin nhắn đến chính mình
 func sendMessageMyself(roomID string, senderID uint, response model.EventResponse) {
 	//Kiểm tra room có tồn tại hay không
 	val, ok := roomStore.Load(roomID)
@@ -217,6 +331,7 @@ func sendMessageMyself(roomID string, senderID uint, response model.EventRespons
 	fmt.Println("")
 }
 
+// Hàm gửi tin nhắn đến các connect khác
 func sendMessageOther(roomID string, senderID uint, response model.EventResponse) {
 	//Kiểm tra room có tồn tại hay không
 	val, ok := roomStore.Load(roomID)

@@ -10,7 +10,8 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
-	r.GET("/ws", middleware.AuthGuard(), handler.HandleWebSocket)
+	r.GET("/chat", middleware.AuthGuard(), handler.HandleChatOneOnOne)
+	r.GET("/chat-noti", middleware.AuthGuard(), handler.HandleChatNoti)
 
 	return r
 }

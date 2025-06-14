@@ -20,6 +20,12 @@ type SendMessageDataResponse struct {
 	TimeStamp time.Time `json:"timestamp"`
 }
 
+type SendMessageNotiDataResponse struct {
+	Type      string    `json:"type" example:"following, followedBy"`
+	UserID    uint      `json:"userID"`
+	TimeStamp time.Time `json:"timestamp"`
+}
+
 type JoinRoomDataResponse struct {
 	RoomID    string    `json:"roomID"`
 	TimeStamp time.Time `json:"timestamp"`
