@@ -169,29 +169,31 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 					},
 				}
 
-				sendMessageOther(roomID, senderID, response)
+				isSended := sendMessageOther(roomID, senderID, response)
 
-				roomNoti := GenerateChatNotiRoomID(data.UserID)
+				if isSended {
+					roomNoti := GenerateChatNotiRoomID(data.UserID)
 
-				notiType := ""
+					notiType := ""
 
-				if data.IsOwner {
-					notiType = "following"
-				} else {
-					notiType = "followedBy"
+					if data.IsOwner {
+						notiType = "following"
+					} else {
+						notiType = "followedBy"
+					}
+
+					notiResponse := model.EventResponse{
+						Event:  "send_message_response",
+						Status: "success",
+						Data: model.SendMessageNotiDataResponse{
+							Type:      notiType,
+							UserID:    data.UserID,
+							TimeStamp: time.Now(),
+						},
+					}
+
+					sendMessageNoti(roomNoti, notiResponse)
 				}
-
-				notiResponse := model.EventResponse{
-					Event:  "send_message_response",
-					Status: "success",
-					Data: model.SendMessageNotiDataResponse{
-						Type:      notiType,
-						UserID:    data.UserID,
-						TimeStamp: time.Now(),
-					},
-				}
-
-				sendMessageNoti(roomNoti, notiResponse)
 			}
 
 		case "join_room":
@@ -332,12 +334,12 @@ func sendMessageMyself(roomID string, senderID uint, response model.EventRespons
 }
 
 // Hàm gửi tin nhắn đến các connect khác
-func sendMessageOther(roomID string, senderID uint, response model.EventResponse) {
+func sendMessageOther(roomID string, senderID uint, response model.EventResponse) bool {
 	//Kiểm tra room có tồn tại hay không
 	val, ok := roomStore.Load(roomID)
 	if !ok {
 		fmt.Println("Room not found:", roomID)
-		return
+		return false
 	}
 
 	fmt.Println("---Gửi tin nhắn đến:", roomID)
@@ -348,7 +350,7 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 	data, err := json.Marshal(response)
 	if err != nil {
 		fmt.Println("Marshal error:", err)
-		return
+		return false
 	}
 
 	isInRoom := false
@@ -384,7 +386,11 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 		fmt.Println("---Gửi tin nhắn xong---")
 	} else {
 		fmt.Println("---Bạn đã thoát phòng rồi---")
+
+		return false
 	}
 
 	fmt.Println("")
+
+	return true
 }
