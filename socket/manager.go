@@ -53,7 +53,7 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 	fmt.Println("---Tạo room: " + roomID)
 }
 
-// Hàm xóa user khỏi room chat, nếu không còn user -> xóa room chat
+// Hàm xóa user khỏi tát cả room chat, nếu không còn user -> xóa room chat
 func RemoveConnectionFromAllRooms(conn *websocket.Conn) {
 	//Lặp qua 1 mảng các room
 	roomStore.Range(func(key, value any) bool {
@@ -73,6 +73,34 @@ func RemoveConnectionFromAllRooms(conn *websocket.Conn) {
 
 		if empty {
 			roomStore.Delete(roomID)
+		}
+
+		return true
+	})
+}
+
+// Hàm xóa user khỏi 1 room chat, nếu không còn user -> xóa room chat
+func RemoveConnectionFromRoom(roomIDRemove string, conn *websocket.Conn) {
+	//Lặp qua 1 mảng các room
+	roomStore.Range(func(key, value any) bool {
+		//Lấy ra mảng các kết nối thuộc roomID
+		roomID := key.(string)
+		conns := value.(*sync.Map)
+
+		if roomID == roomIDRemove {
+			// Xoá kết nối ra khỏi room
+			conns.Delete(conn)
+
+			// Kiểm tra nếu không còn ai thì xoá luôn room
+			empty := true
+			conns.Range(func(_, _ any) bool {
+				empty = false
+				return false // Dừng sớm nếu có ít nhất 1 người
+			})
+
+			if empty {
+				roomStore.Delete(roomID)
+			}
 		}
 
 		return true
@@ -254,7 +282,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 
 				sendMessageMyself(roomID, senderID, response)
 
-				RemoveConnectionFromAllRooms(conn)
+				RemoveConnectionFromRoom(roomID, conn)
 			}
 		default:
 			log.Println("unknown event:", evt.Event)
