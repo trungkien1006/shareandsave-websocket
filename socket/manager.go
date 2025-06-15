@@ -58,9 +58,12 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 
 	if count < 2 {
 		conns.Store(conn, userID)
+
+		fmt.Println("---Tạo room thành công: " + roomID)
+		return
 	}
 
-	fmt.Println("---Tạo room: " + roomID)
+	fmt.Println("---Không thể join room: " + strconv.Itoa(count))
 }
 
 // Hàm xóa user khỏi tát cả room chat, nếu không còn user -> xóa room chat
@@ -194,10 +197,11 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 					Event:  "send_message_response",
 					Status: "success",
 					Data: model.SendMessageDataResponse{
-						RoomID:    roomID,
-						Message:   data.Message,
-						SenderID:  senderID,
-						TimeStamp: time.Now(),
+						InterestID: data.InterestID,
+						RoomID:     roomID,
+						Message:    data.Message,
+						SenderID:   senderID,
+						TimeStamp:  time.Now(),
 					},
 				}
 
@@ -218,9 +222,10 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 						Event:  "send_message_response",
 						Status: "success",
 						Data: model.SendMessageNotiDataResponse{
-							Type:      notiType,
-							UserID:    data.UserID,
-							TimeStamp: time.Now(),
+							InterestID: data.InterestID,
+							Type:       notiType,
+							UserID:     data.UserID,
+							TimeStamp:  time.Now(),
 						},
 					}
 

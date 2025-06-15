@@ -14,16 +14,18 @@ type EventResponse struct {
 }
 
 type SendMessageDataResponse struct {
-	SenderID  uint      `json:"senderID"`
-	RoomID    string    `json:"roomID"`
-	Message   string    `json:"message"`
-	TimeStamp time.Time `json:"timestamp"`
+	SenderID   uint      `json:"senderID"`
+	InterestID uint      `json:"interestID"`
+	RoomID     string    `json:"roomID"`
+	Message    string    `json:"message"`
+	TimeStamp  time.Time `json:"timestamp"`
 }
 
 type SendMessageNotiDataResponse struct {
-	Type      string    `json:"type" example:"following, followedBy"`
-	UserID    uint      `json:"userID"`
-	TimeStamp time.Time `json:"timestamp"`
+	Type       string    `json:"type" example:"following, followedBy"`
+	InterestID uint      `json:"interestID"`
+	UserID     uint      `json:"userID"`
+	TimeStamp  time.Time `json:"timestamp"`
 }
 
 type JoinRoomDataResponse struct {
