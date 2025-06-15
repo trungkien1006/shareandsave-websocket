@@ -48,7 +48,17 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 
 	//Gán conn vào mảng các conn của roomID
 	conns := val.(*sync.Map)
-	conns.Store(conn, userID)
+
+	count := 0
+
+	conns.Range(func(nil, value any) bool {
+		count++
+		return true
+	})
+
+	if count < 2 {
+		conns.Store(conn, userID)
+	}
 
 	fmt.Println("---Tạo room: " + roomID)
 }
