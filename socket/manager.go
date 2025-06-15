@@ -15,8 +15,8 @@ import (
 var roomStore sync.Map // map[string]map[*websocket.Conn]int
 var roomNoti sync.Map
 
-func GenerateChatRoomID(postOwnerID uint, senderID uint) string {
-	return "chat:postOwner:" + strconv.Itoa(int(postOwnerID)) + ":user:" + strconv.Itoa(int(senderID))
+func GenerateChatRoomID(interestID uint) string {
+	return "chat:interest:" + strconv.Itoa(int(interestID))
 }
 
 func GenerateChatNotiRoomID(senderID uint) string {
@@ -188,13 +188,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 					continue
 				}
 
-				roomID := ""
-
-				if data.IsOwner {
-					roomID = GenerateChatRoomID(senderID, data.UserID)
-				} else {
-					roomID = GenerateChatRoomID(data.UserID, senderID)
-				}
+				roomID := GenerateChatRoomID(data.InterestID)
 
 				response := model.EventResponse{
 					Event:  "send_message_response",
@@ -243,13 +237,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 					continue
 				}
 
-				roomID := ""
-
-				if data.IsOwner {
-					roomID = GenerateChatRoomID(senderID, data.UserID)
-				} else {
-					roomID = GenerateChatRoomID(data.UserID, senderID)
-				}
+				roomID := GenerateChatRoomID(data.InterestID)
 
 				response := model.EventResponse{
 					Event:  "join_room_response",
@@ -273,13 +261,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 					continue
 				}
 
-				roomID := ""
-
-				if data.IsOwner {
-					roomID = GenerateChatRoomID(senderID, data.UserID)
-				} else {
-					roomID = GenerateChatRoomID(data.UserID, senderID)
-				}
+				roomID := GenerateChatRoomID(data.InterestID)
 
 				response := model.EventResponse{
 					Event:  "left_room_response",

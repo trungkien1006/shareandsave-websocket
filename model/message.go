@@ -43,17 +43,16 @@ type EventRequest struct {
 }
 
 type SendMessageDataRequest struct {
-	IsOwner bool   `json:"isOwner"`
-	UserID  uint   `json:"userID"`
-	Message string `json:"message"`
+	InterestID uint   `json:"interestID"`
+	IsOwner    bool   `json:"isOwner"`
+	UserID     uint   `json:"userID"`
+	Message    string `json:"message"`
 }
 
 type JoinRoomDataRequest struct {
-	IsOwner bool `json:"isOwner"`
-	UserID  uint `json:"userID"`
+	InterestID uint `json:"interestID"`
 }
 
 type LeftRoomDataRequest struct {
-	IsOwner bool `json:"isOwner"`
-	UserID  uint `json:"userID"`
+	InterestID uint `json:"interestID"`
 }
