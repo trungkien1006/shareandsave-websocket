@@ -207,6 +207,8 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 
 				isSended := sendMessageOther(roomID, senderID, response)
 
+				sendMessageMyself(roomID, senderID, response)
+
 				if isSended {
 					roomNoti := GenerateChatNotiRoomID(data.UserID)
 
