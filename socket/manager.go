@@ -1,15 +1,18 @@
 package socket
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
 	"sync"
 	"time"
+	"websocket/helpers"
 	"websocket/model"
 
 	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 )
 
 var roomStore sync.Map // map[string]map[*websocket.Conn]int
@@ -231,6 +234,16 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 						},
 					}
 
+					redisMessage := model.RedisMessageSend{
+						InterestID: data.InterestID,
+						SenderID:   senderID,
+						ReceiverID: data.UserID,
+						Content:    data.Message,
+						CreatedAt:  time.Now(),
+					}
+
+					sendMessageToRedis(redisMessage)
+
 					sendMessageNoti(roomNoti, notiResponse)
 				}
 			}
@@ -420,4 +433,23 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 	fmt.Println("")
 
 	return true
+}
+
+func sendMessageToRedis(data model.RedisMessageSend) {
+	ctx := context.Background()
+
+	fmt.Println("---Gửi tin nhắn vào redis stream")
+
+	helpers.RedisClient.XAdd(ctx, &redis.XAddArgs{
+		Stream: "chatstream",
+		Values: map[string]interface{}{
+			"interestID": data.InterestID,
+			"senderID":   data.SenderID,
+			"receiverID": data.ReceiverID,
+			"content":    data.Content,
+			"createdAt":  data.CreatedAt,
+		},
+	})
+
+	fmt.Println("---Gửi tin nhắn vào redis stream hoàn tất")
 }

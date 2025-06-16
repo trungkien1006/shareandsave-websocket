@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"websocket/config"
+	"websocket/helpers"
+	"websocket/redis"
 	"websocket/router"
 
 	"github.com/joho/godotenv"
@@ -19,6 +21,7 @@ func main() {
 
 	config.LoadEnv()
 	r := router.SetupRouter()
+	helpers.RedisClient = redis.InitRedis()
 
 	port := os.Getenv("PORT_SOCKET")
 	ip := os.Getenv("IP")

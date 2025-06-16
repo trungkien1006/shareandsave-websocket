@@ -58,3 +58,12 @@ type JoinRoomDataRequest struct {
 type LeftRoomDataRequest struct {
 	InterestID uint `json:"interestID"`
 }
+
+// redis
+type RedisMessageSend struct {
+	InterestID uint
+	SenderID   uint
+	ReceiverID uint
+	Content    string
+	CreatedAt  time.Time
+}
