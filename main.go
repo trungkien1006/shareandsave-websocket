@@ -15,6 +15,8 @@ import (
 )
 
 func main() {
+	fmt.Println("👀 Start main")
+
 	_ = godotenv.Load()
 
 	gin.SetMode(os.Getenv("GIN_MODE"))
