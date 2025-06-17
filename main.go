@@ -20,8 +20,10 @@ func main() {
 	}
 
 	config.LoadEnv()
-	r := router.SetupRouter()
+
 	helpers.RedisClient = redis.InitRedis()
+
+	r := router.SetupRouter()
 
 	port := os.Getenv("PORT_SOCKET")
 	ip := os.Getenv("IP")
