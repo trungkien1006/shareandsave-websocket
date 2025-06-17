@@ -21,6 +21,8 @@ func main() {
 
 	config.LoadEnv()
 
+	fmt.Println("Chuẩn bị connect Redis")
+
 	helpers.RedisClient = redis.InitRedis()
 
 	r := router.SetupRouter()
