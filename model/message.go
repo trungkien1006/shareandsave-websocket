@@ -24,7 +24,7 @@ type SendMessageDataResponse struct {
 type SendMessageNotiDataResponse struct {
 	Type       string    `json:"type" example:"following, followedBy"`
 	InterestID uint      `json:"interestID"`
-	UserID     uint      `json:"userID"`
+	SenderID   uint      `json:"senderID"`
 	TimeStamp  time.Time `json:"timestamp"`
 }
 

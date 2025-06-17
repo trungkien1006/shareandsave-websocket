@@ -40,7 +40,7 @@ func RegisterConnectionToRoomChatNoti(roomID string, conn *websocket.Conn) {
 
 // Hàm xóa room public chat noti
 func RemoveConnectionFromRoomChatNoti(roomID string) {
-	roomStore.Delete(roomID)
+	roomNoti.Delete(roomID)
 	fmt.Println("---Xóa room: " + roomID)
 }
 
@@ -246,7 +246,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 						Data: model.SendMessageNotiDataResponse{
 							InterestID: data.InterestID,
 							Type:       notiType,
-							UserID:     data.UserID,
+							SenderID:   senderID,
 							TimeStamp:  time.Now(),
 						},
 					}
