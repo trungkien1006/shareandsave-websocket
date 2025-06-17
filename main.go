@@ -6,11 +6,11 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"websocket/config"
 	"websocket/helpers"
 	"websocket/redis"
 	"websocket/router"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -19,9 +19,9 @@ func main() {
 		_ = godotenv.Load()
 	}
 
-	config.LoadEnv()
+	gin.SetMode(os.Getenv("GIN_MODE"))
 
-	fmt.Println("Chuẩn bị connect Redis")
+	fmt.Println("Chuẩn bị connect")
 
 	helpers.RedisClient = redis.InitRedis()
 
