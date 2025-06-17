@@ -402,9 +402,8 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 
 		if userID == senderID {
 			isInRoom = true
-
-			return true
 		}
+
 		return true
 	})
 
@@ -428,11 +427,10 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 		fmt.Println("---Gửi tin nhắn xong---")
 	} else {
 		fmt.Println("---Bạn đã thoát phòng rồi---")
+		fmt.Println("")
 
 		return false
 	}
-
-	fmt.Println("")
 
 	return true
 }
