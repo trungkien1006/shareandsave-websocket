@@ -166,6 +166,8 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 		conn.Close()
 	}()
 
+	fmt.Printf("")
+
 	//Chạy vòng lặp đọc dữ liệu từ kết nối FE
 	for {
 		_, msgBytes, err := conn.ReadMessage()
@@ -302,6 +304,8 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 			log.Println("unknown event:", evt.Event)
 		}
 	}
+
+	fmt.Printf("")
 }
 
 // Hàm gửi tin nhắn đến thông báo của user khác
@@ -332,7 +336,6 @@ func sendMessageNoti(roomID string, response model.EventResponse) {
 	}
 
 	fmt.Println("---Gửi tin nhắn thông báo xong---")
-	fmt.Println("")
 }
 
 // Hàm gửi tin nhắn đến chính mình
@@ -427,7 +430,6 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 		fmt.Println("---Gửi tin nhắn xong---")
 	} else {
 		fmt.Println("---Bạn đã thoát phòng rồi---")
-		fmt.Println("")
 
 		return false
 	}
