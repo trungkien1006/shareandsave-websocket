@@ -144,11 +144,11 @@ func SendPublicMessageHandler(conn *websocket.Conn, senderID uint) {
 		},
 	}
 
-	RegisterConnectionToRoomChatNoti(roomID, conn)
-
-	sendMessageNoti(roomID, response)
-
 	for {
+		RegisterConnectionToRoomChatNoti(roomID, conn)
+
+		sendMessageNoti(roomID, response)
+
 		_, _, err := conn.ReadMessage()
 		if err != nil {
 			fmt.Println("Error:", err)
