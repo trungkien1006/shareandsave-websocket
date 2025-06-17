@@ -17,6 +17,7 @@ var (
 func InitRedis() *redis.Client {
 	once.Do(func() {
 		// redisHost := os.Getenv("REDIS_HOST")
+		fmt.Println("✅ Bắt đầu kết nối Redis:")
 
 		redisClient = redis.NewClient(&redis.Options{
 			Addr:         "127.0.0.0" + ":6379", // hoặc "redis:6379" nếu dùng Docker
