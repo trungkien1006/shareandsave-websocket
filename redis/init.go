@@ -3,7 +3,6 @@ package redis
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -17,10 +16,10 @@ var (
 
 func InitRedis() *redis.Client {
 	once.Do(func() {
-		redisHost := os.Getenv("REDIS_HOST")
+		// redisHost := os.Getenv("REDIS_HOST")
 
 		redisClient = redis.NewClient(&redis.Options{
-			Addr:         redisHost + ":6379", // hoặc "redis:6379" nếu dùng Docker
+			Addr:         "127.0.0.0" + ":6379", // hoặc "redis:6379" nếu dùng Docker
 			PoolSize:     20,
 			MinIdleConns: 5,
 		})
