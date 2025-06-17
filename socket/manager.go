@@ -123,7 +123,7 @@ func RemoveConnectionFromRoom(roomIDRemove string, conn *websocket.Conn) {
 	})
 }
 
-// Hàm xử lí chat 1-1
+// Hàm xử lí chat noti
 func SendPublicMessageHandler(conn *websocket.Conn, senderID uint) {
 	//Hàm hủy chạy sau khi hàm chính kết thúc
 	defer func() {
@@ -135,18 +135,18 @@ func SendPublicMessageHandler(conn *websocket.Conn, senderID uint) {
 	// Join room
 	roomID := GenerateChatNotiRoomID(senderID)
 
-	response := model.EventResponse{
-		Event:  "join_noti_room_response",
-		Status: "success",
-		Data: model.JoinRoomDataResponse{
-			RoomID:    roomID,
-			TimeStamp: time.Now(),
-		},
-	}
+	// response := model.EventResponse{
+	// 	Event:  "join_noti_room_response",
+	// 	Status: "success",
+	// 	Data: model.JoinRoomDataResponse{
+	// 		RoomID:    roomID,
+	// 		TimeStamp: time.Now(),
+	// 	},
+	// }
 
 	RegisterConnectionToRoomChatNoti(roomID, conn)
 
-	sendMessageNoti(roomID, response)
+	// sendMessageNoti(roomID, response)
 
 	for {
 		_, _, err := conn.ReadMessage()
@@ -211,6 +211,8 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 				isSended := sendMessageOther(roomID, senderID, response)
 
 				sendMessageMyself(roomID, senderID, response)
+
+				fmt.Println("----Send message status:", isSended)
 
 				if isSended {
 					roomNoti := GenerateChatNotiRoomID(data.UserID)
