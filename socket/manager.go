@@ -198,6 +198,19 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 
 				roomID := GenerateChatRoomID(data.InterestID)
 
+				if senderID == data.UserID {
+					response := model.EventResponse{
+						Event:  "send_message_response",
+						Status: "error",
+						Data:   nil,
+						Error:  "Id người gửi và nhận trùng nhau",
+					}
+
+					sendMessageMyself(roomID, senderID, response)
+
+					continue
+				}
+
 				response := model.EventResponse{
 					Event:  "send_message_response",
 					Status: "success",
@@ -212,11 +225,11 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 
 				numUser, isSended := sendMessageOther(roomID, senderID, response)
 
-				sendMessageMyself(roomID, senderID, response)
-
 				fmt.Println("----Send message status:", isSended)
 
 				if isSended {
+					sendMessageMyself(roomID, senderID, response)
+
 					roomNoti := GenerateChatNotiRoomID(data.UserID)
 
 					notiType := ""
@@ -258,6 +271,12 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 					sendMessageToRedis(redisMessage)
 
 					sendMessageNoti(roomNoti, notiResponse)
+				} else {
+					response.Status = "error"
+					response.Data = nil
+					response.Error = "Gửi tin nhắn không thành công"
+
+					sendMessageMyself(roomID, senderID, response)
 				}
 			}
 
