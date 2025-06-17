@@ -15,9 +15,7 @@ import (
 )
 
 func main() {
-	if os.Getenv("DOCKER_ENV") != "true" {
-		_ = godotenv.Load()
-	}
+	_ = godotenv.Load()
 
 	gin.SetMode(os.Getenv("GIN_MODE"))
 
