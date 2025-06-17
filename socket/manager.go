@@ -166,10 +166,10 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 		conn.Close()
 	}()
 
-	fmt.Printf("")
-
 	//Chạy vòng lặp đọc dữ liệu từ kết nối FE
 	for {
+		fmt.Printf("")
+
 		_, msgBytes, err := conn.ReadMessage()
 		if err != nil {
 			fmt.Println("Read error:", err)
