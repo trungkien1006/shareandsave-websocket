@@ -246,6 +246,8 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 						CreatedAt:  time.Now(),
 					}
 
+					fmt.Println("---Chuẩn bị gửi tin nhắn vào redis stream")
+
 					sendMessageToRedis(redisMessage)
 
 					sendMessageNoti(roomNoti, notiResponse)
