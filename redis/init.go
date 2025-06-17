@@ -20,7 +20,7 @@ func InitRedis() *redis.Client {
 		fmt.Println("✅ Bắt đầu kết nối Redis:")
 
 		redisClient = redis.NewClient(&redis.Options{
-			Addr:         "127.0.0.0" + ":6379", // hoặc "redis:6379" nếu dùng Docker
+			Addr:         "0.0.0.0" + ":6379", // hoặc "redis:6379" nếu dùng Docker
 			PoolSize:     20,
 			MinIdleConns: 5,
 		})
