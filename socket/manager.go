@@ -210,7 +210,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 					},
 				}
 
-				isSended := sendMessageOther(roomID, senderID, response)
+				numUser, isSended := sendMessageOther(roomID, senderID, response)
 
 				sendMessageMyself(roomID, senderID, response)
 
@@ -238,15 +238,22 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 						},
 					}
 
+					isRead := 0
+
+					if numUser == 2 {
+						isRead = 1
+					}
+
 					redisMessage := model.RedisMessageSend{
 						InterestID: data.InterestID,
 						SenderID:   senderID,
 						ReceiverID: data.UserID,
 						Content:    data.Message,
+						IsRead:     isRead,
 						CreatedAt:  time.Now(),
 					}
 
-					fmt.Println("---Chuẩn bị gửi tin nhắn vào redis stream")
+					fmt.Println("---Số lượng user trong room: " + strconv.Itoa(numUser))
 
 					sendMessageToRedis(redisMessage)
 
@@ -381,29 +388,25 @@ func sendMessageMyself(roomID string, senderID uint, response model.EventRespons
 }
 
 // Hàm gửi tin nhắn đến các connect khác
-func sendMessageOther(roomID string, senderID uint, response model.EventResponse) bool {
+func sendMessageOther(roomID string, senderID uint, response model.EventResponse) (int, bool) {
 	//Kiểm tra room có tồn tại hay không
 	val, ok := roomStore.Load(roomID)
 	if !ok {
 		fmt.Println("Room not found:", roomID)
-		return false
+		return 0, false
 	}
 
 	fmt.Println("---Gửi tin nhắn đến:", roomID)
 
 	conns := val.(*sync.Map)
 
-	//Ép thành JSON
-	data, err := json.Marshal(response)
-	if err != nil {
-		fmt.Println("Marshal error:", err)
-		return false
-	}
-
 	isInRoom := false
+	numUser := 0
 
 	conns.Range(func(key, value any) bool {
 		userID := value.(uint)
+
+		numUser++
 
 		if userID == senderID {
 			isInRoom = true
@@ -411,6 +414,17 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 
 		return true
 	})
+
+	if numUser == 2 {
+
+	}
+
+	//Ép thành JSON
+	data, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println("Marshal error:", err)
+		return 0, false
+	}
 
 	if isInRoom {
 		//Duyệt qua mảng các conn gửi tin nhắn đến người khác
@@ -433,10 +447,10 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 	} else {
 		fmt.Println("---Bạn đã thoát phòng rồi---")
 
-		return false
+		return numUser, false
 	}
 
-	return true
+	return numUser, true
 }
 
 func sendMessageToRedis(data model.RedisMessageSend) {
@@ -451,6 +465,7 @@ func sendMessageToRedis(data model.RedisMessageSend) {
 			"senderID":   data.SenderID,
 			"receiverID": data.ReceiverID,
 			"content":    data.Content,
+			"isRead":     data.IsRead,
 			"createdAt":  data.CreatedAt,
 		},
 	})

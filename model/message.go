@@ -65,5 +65,6 @@ type RedisMessageSend struct {
 	SenderID   uint
 	ReceiverID uint
 	Content    string
+	IsRead     int
 	CreatedAt  time.Time
 }
