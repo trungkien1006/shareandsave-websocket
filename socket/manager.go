@@ -85,6 +85,7 @@ func RemoveConnectionFromAllRooms(conn *websocket.Conn) {
 		// Kiểm tra nếu không còn ai thì xoá luôn room
 		empty := true
 		conns.Range(func(_, _ any) bool {
+			fmt.Println("---Kiểm tra còn người: " + roomID)
 			empty = false
 			return false // Dừng sớm nếu có ít nhất 1 người
 		})
