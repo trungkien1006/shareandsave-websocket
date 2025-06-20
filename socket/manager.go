@@ -50,9 +50,9 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 	val, _ := roomStore.LoadOrStore(roomID, &sync.Map{})
 
 	//Gán conn vào mảng các conn của roomID
-	conns := val.(*sync.Map)
+	userIDs := val.(*sync.Map)
 
-	_, exists := conns.Load(conn)
+	_, exists := userIDs.Load(userID)
 	if exists {
 		fmt.Println("Kết nối đã tồn tại trong room: " + roomID)
 		return
@@ -60,13 +60,13 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 
 	count := 0
 
-	conns.Range(func(nil, value any) bool {
+	userIDs.Range(func(nil, value any) bool {
 		count++
 		return true
 	})
 
 	if count < 2 {
-		conns.Store(conn, userID)
+		userIDs.Store(userID, conn)
 
 		fmt.Println("---Tạo room thành công: " + roomID)
 		return
@@ -76,21 +76,21 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 }
 
 // Hàm xóa user khỏi tát cả room chat, nếu không còn user -> xóa room chat
-func RemoveConnectionFromAllRooms(conn *websocket.Conn) {
+func RemoveConnectionFromAllRooms(userID uint) {
 	//Lặp qua 1 mảng các room
 	roomStore.Range(func(key, value any) bool {
 		//Lấy ra mảng các kết nối thuộc roomID
 		roomID := key.(string)
-		conns := value.(*sync.Map)
+		userIDs := value.(*sync.Map)
 
 		fmt.Println("---Rời phòng: " + roomID)
 
 		// Xoá kết nối ra khỏi room
-		conns.Delete(conn)
+		userIDs.Delete(userID)
 
 		// Kiểm tra nếu không còn ai thì xoá luôn room
 		empty := true
-		conns.Range(func(_, _ any) bool {
+		userIDs.Range(func(_, _ any) bool {
 			fmt.Println("---Kiểm tra còn người: " + roomID)
 			empty = false
 			return false // Dừng sớm nếu có ít nhất 1 người
@@ -106,20 +106,20 @@ func RemoveConnectionFromAllRooms(conn *websocket.Conn) {
 }
 
 // Hàm xóa user khỏi 1 room chat, nếu không còn user -> xóa room chat
-func RemoveConnectionFromRoom(roomIDRemove string, conn *websocket.Conn) {
+func RemoveConnectionFromRoom(roomIDRemove string, userID uint) {
 	//Lặp qua 1 mảng các room
 	roomStore.Range(func(key, value any) bool {
 		//Lấy ra mảng các kết nối thuộc roomID
 		roomID := key.(string)
-		conns := value.(*sync.Map)
+		userIDs := value.(*sync.Map)
 
 		if roomID == roomIDRemove {
 			// Xoá kết nối ra khỏi room
-			conns.Delete(conn)
+			userIDs.Delete(userID)
 
 			// Kiểm tra nếu không còn ai thì xoá luôn room
 			empty := true
-			conns.Range(func(_, _ any) bool {
+			userIDs.Range(func(_, _ any) bool {
 				empty = false
 				return false // Dừng sớm nếu có ít nhất 1 người
 			})
@@ -172,7 +172,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 	//Hàm hủy chạy sau khi hàm chính kết thúc
 	defer func() {
 		fmt.Printf("Đóng kết nối user %d\n", senderID)
-		RemoveConnectionFromAllRooms(conn)
+		RemoveConnectionFromAllRooms(senderID)
 		conn.Close()
 	}()
 
@@ -336,7 +336,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 
 				sendMessageMyself(roomID, senderID, response)
 
-				RemoveConnectionFromRoom(roomID, conn)
+				RemoveConnectionFromRoom(roomID, senderID)
 			}
 		default:
 			log.Println("unknown event:", evt.Event)
@@ -387,7 +387,7 @@ func sendMessageMyself(roomID string, senderID uint, response model.EventRespons
 
 	fmt.Println("---Gửi tin nhắn đến:", roomID)
 
-	conns := val.(*sync.Map)
+	userIDs := val.(*sync.Map)
 
 	//Ép thành JSON
 	data, err := json.Marshal(response)
@@ -397,9 +397,9 @@ func sendMessageMyself(roomID string, senderID uint, response model.EventRespons
 	}
 
 	//Duyệt qua mảng các conn gửi tin nhắn đến người khác
-	conns.Range(func(key, value any) bool {
-		conn := key.(*websocket.Conn)
-		userID := value.(uint)
+	userIDs.Range(func(key, value any) bool {
+		conn := value.(*websocket.Conn)
+		userID := key.(uint)
 
 		if userID == senderID {
 			fmt.Println("Tìm thấy room:", roomID)
@@ -427,13 +427,13 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 
 	fmt.Println("---Gửi tin nhắn đến:", roomID)
 
-	conns := val.(*sync.Map)
+	userIDs := val.(*sync.Map)
 
 	isInRoom := false
 	numUser := 0
 
-	conns.Range(func(key, value any) bool {
-		userID := value.(uint)
+	userIDs.Range(func(key, value any) bool {
+		userID := key.(uint)
 
 		numUser++
 
@@ -457,9 +457,9 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 
 	if isInRoom {
 		//Duyệt qua mảng các conn gửi tin nhắn đến người khác
-		conns.Range(func(key, value any) bool {
-			conn := key.(*websocket.Conn)
-			userID := value.(uint)
+		userIDs.Range(func(key, value any) bool {
+			conn := value.(*websocket.Conn)
+			userID := key.(uint)
 
 			if userID != senderID {
 				fmt.Println("Tìm thấy room:", roomID)
