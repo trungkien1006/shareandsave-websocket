@@ -59,7 +59,7 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 		return true
 	})
 
-	if count < 2 {
+	if count <= 2 {
 		conns.Store(conn, userID)
 
 		fmt.Println("---Tạo room thành công: " + roomID)
@@ -77,6 +77,8 @@ func RemoveConnectionFromAllRooms(conn *websocket.Conn) {
 		roomID := key.(string)
 		conns := value.(*sync.Map)
 
+		fmt.Println("---Rời phòng: " + roomID)
+
 		// Xoá kết nối ra khỏi room
 		conns.Delete(conn)
 
@@ -88,6 +90,7 @@ func RemoveConnectionFromAllRooms(conn *websocket.Conn) {
 		})
 
 		if empty {
+			fmt.Println("---Xóa phòng: " + roomID)
 			roomStore.Delete(roomID)
 		}
 
