@@ -52,6 +52,12 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 	//Gán conn vào mảng các conn của roomID
 	conns := val.(*sync.Map)
 
+	_, exists := conns.Load(conn)
+	if exists {
+		fmt.Println("Kết nối đã tồn tại trong room: " + roomID)
+		return
+	}
+
 	count := 0
 
 	conns.Range(func(nil, value any) bool {
@@ -59,7 +65,7 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 		return true
 	})
 
-	if count <= 2 {
+	if count < 2 {
 		conns.Store(conn, userID)
 
 		fmt.Println("---Tạo room thành công: " + roomID)
