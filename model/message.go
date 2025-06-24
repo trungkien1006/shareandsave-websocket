@@ -38,6 +38,11 @@ type LeftRoomDataResponse struct {
 	TimeStamp time.Time `json:"timestamp"`
 }
 
+type SendTransactionDataResponse struct {
+	InterestID uint `json:"interestID"`
+	ReceiverID uint `json:"receiverID"`
+}
+
 // request
 type EventRequest struct {
 	Event string          `json:"event"`
@@ -57,6 +62,11 @@ type JoinRoomDataRequest struct {
 
 type LeftRoomDataRequest struct {
 	InterestID uint `json:"interestID"`
+}
+
+type SendTransactionRequest struct {
+	InterestID uint `json:"interestID"`
+	ReceiverID uint `json:"receiverID"`
 }
 
 // redis

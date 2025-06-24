@@ -178,8 +178,6 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 
 	//Chạy vòng lặp đọc dữ liệu từ kết nối FE
 	for {
-		fmt.Printf("")
-
 		_, msgBytes, err := conn.ReadMessage()
 		if err != nil {
 			fmt.Println("Read error:", err)
@@ -193,6 +191,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 			continue
 		}
 
+		fmt.Printf("")
 		fmt.Println("---Xử lí sự kiện:", evt.Event)
 
 		//Xử lí sự kiện tương ứng
@@ -337,6 +336,40 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 				sendMessageMyself(roomID, senderID, response)
 
 				RemoveConnectionFromRoom(roomID, senderID)
+			}
+		case "send_transaction":
+			{
+				var data model.SendTransactionRequest
+
+				if err := json.Unmarshal(evt.Data, &data); err != nil {
+					log.Println("send transaction data error:", err)
+					continue
+				}
+
+				roomID := GenerateChatRoomID(data.InterestID)
+
+				response := model.EventResponse{
+					Event:  "send_transaction_response",
+					Status: "success",
+				}
+
+				_, isSended := sendMessageOther(roomID, senderID, response)
+
+				if isSended {
+					response.Status = "error"
+					response.Error = "Gửi tin nhắn không thành công"
+
+					sendMessageMyself(roomID, senderID, response)
+				} else {
+					response.Data = model.SendTransactionDataResponse{
+						InterestID: data.InterestID,
+						ReceiverID: data.ReceiverID,
+					}
+
+					sendMessageMyself(roomID, senderID, response)
+
+					sendMessageNoti(roomID, response)
+				}
 			}
 		default:
 			log.Println("unknown event:", evt.Event)
