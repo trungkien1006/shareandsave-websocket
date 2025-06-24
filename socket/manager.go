@@ -366,7 +366,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 						ReceiverID: data.ReceiverID,
 					}
 
-					sendMessageMyself(roomID, senderID, response)
+					// sendMessageMyself(roomID, senderID, response)
 
 					sendMessageNoti(roomID, response)
 				}
