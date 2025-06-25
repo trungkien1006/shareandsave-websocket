@@ -359,7 +359,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 					response.Status = "error"
 					response.Error = "Gửi tin nhắn không thành công"
 
-					sendMessageMyself(roomID, senderID, response)
+					// sendMessageMyself(roomID, senderID, response)
 				} else {
 					response.Data = model.SendTransactionDataResponse{
 						InterestID: data.InterestID,
@@ -476,10 +476,6 @@ func sendMessageOther(roomID string, senderID uint, response model.EventResponse
 
 		return true
 	})
-
-	if numUser == 2 {
-
-	}
 
 	//Ép thành JSON
 	data, err := json.Marshal(response)
