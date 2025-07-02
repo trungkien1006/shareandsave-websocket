@@ -15,7 +15,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var roomStore sync.Map // map[string]map[*websocket.Conn]int
+var roomChatOneOne sync.Map // map[string]map[*websocket.Conn]int
+var roomChatNoti sync.Map
 var roomNoti sync.Map
 
 func GenerateChatRoomID(interestID uint) string {
@@ -26,8 +27,24 @@ func GenerateChatNotiRoomID(senderID uint) string {
 	return "chatNoti:user:" + strconv.Itoa(int(senderID))
 }
 
+func GenerateNotiRoomID(receiverID uint) string {
+	return "noti:user:" + strconv.Itoa(int(receiverID))
+}
+
 // Hàm tạo room public chat noti cho mỗi user
 func RegisterConnectionToRoomChatNoti(roomID string, conn *websocket.Conn) {
+	//Lấy ra mảng của roomID, nếu chưa thì tạo
+	_, loaded := roomChatNoti.LoadOrStore(roomID, conn)
+
+	if loaded {
+		fmt.Println("---Room đã tồn tại: " + roomID)
+	} else {
+		fmt.Println("---Tạo room thành công: " + roomID)
+	}
+}
+
+// Hàm tạo room public chat noti cho mỗi user
+func RegisterConnectionToRoomNoti(roomID string, conn *websocket.Conn) {
 	//Lấy ra mảng của roomID, nếu chưa thì tạo
 	_, loaded := roomNoti.LoadOrStore(roomID, conn)
 
@@ -40,6 +57,12 @@ func RegisterConnectionToRoomChatNoti(roomID string, conn *websocket.Conn) {
 
 // Hàm xóa room public chat noti
 func RemoveConnectionFromRoomChatNoti(roomID string) {
+	roomChatNoti.Delete(roomID)
+	fmt.Println("---Xóa room: " + roomID)
+}
+
+// Hàm xóa room public chat noti
+func RemoveConnectionFromRoomNoti(roomID string) {
 	roomNoti.Delete(roomID)
 	fmt.Println("---Xóa room: " + roomID)
 }
@@ -47,7 +70,7 @@ func RemoveConnectionFromRoomChatNoti(roomID string) {
 // Hàm tạo room chat 1-1
 func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) {
 	//Lấy ra mảng của roomID, nếu chưa thì tạo
-	val, _ := roomStore.LoadOrStore(roomID, &sync.Map{})
+	val, _ := roomChatOneOne.LoadOrStore(roomID, &sync.Map{})
 
 	//Gán conn vào mảng các conn của roomID
 	userIDs := val.(*sync.Map)
@@ -78,7 +101,7 @@ func RegisterConnectionToRoom(userID uint, roomID string, conn *websocket.Conn) 
 // Hàm xóa user khỏi tát cả room chat, nếu không còn user -> xóa room chat
 func RemoveConnectionFromAllRooms(userID uint) {
 	//Lặp qua 1 mảng các room
-	roomStore.Range(func(key, value any) bool {
+	roomChatOneOne.Range(func(key, value any) bool {
 		//Lấy ra mảng các kết nối thuộc roomID
 		roomID := key.(string)
 		userIDs := value.(*sync.Map)
@@ -98,7 +121,7 @@ func RemoveConnectionFromAllRooms(userID uint) {
 
 		if empty {
 			fmt.Println("---Xóa phòng: " + roomID)
-			roomStore.Delete(roomID)
+			roomChatOneOne.Delete(roomID)
 		}
 
 		return true
@@ -108,7 +131,7 @@ func RemoveConnectionFromAllRooms(userID uint) {
 // Hàm xóa user khỏi 1 room chat, nếu không còn user -> xóa room chat
 func RemoveConnectionFromRoom(roomIDRemove string, userID uint) {
 	//Lặp qua 1 mảng các room
-	roomStore.Range(func(key, value any) bool {
+	roomChatOneOne.Range(func(key, value any) bool {
 		//Lấy ra mảng các kết nối thuộc roomID
 		roomID := key.(string)
 		userIDs := value.(*sync.Map)
@@ -125,7 +148,7 @@ func RemoveConnectionFromRoom(roomIDRemove string, userID uint) {
 			})
 
 			if empty {
-				roomStore.Delete(roomID)
+				roomChatOneOne.Delete(roomID)
 			}
 		}
 
@@ -157,7 +180,7 @@ func SendPublicMessageHandler(conn *websocket.Conn, senderID uint) {
 	for {
 		RegisterConnectionToRoomChatNoti(roomID, conn)
 
-		sendMessageNoti(roomID, response)
+		sendMessageChatNoti(roomID, response)
 
 		_, _, err := conn.ReadMessage()
 		if err != nil {
@@ -239,7 +262,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 				if isSended {
 					sendMessageMyself(roomID, senderID, response)
 
-					roomNoti := GenerateChatNotiRoomID(data.UserID)
+					roomChatNoti := GenerateChatNotiRoomID(data.UserID)
 
 					notiType := ""
 
@@ -279,7 +302,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 
 					sendMessageToRedis(redisMessage)
 
-					sendMessageNoti(roomNoti, notiResponse)
+					sendMessageNoti(roomChatNoti, notiResponse)
 				} else {
 					response.Status = "error"
 					response.Data = nil
@@ -379,6 +402,96 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 	fmt.Printf("")
 }
 
+func JoinRoomNotiHandler(conn *websocket.Conn, receiverID uint) {
+	// Join room
+	roomID := GenerateNotiRoomID(receiverID)
+
+	fmt.Printf("Kết nối room noti của user: %d\n", receiverID)
+
+	//Hàm hủy chạy sau khi hàm chính kết thúc
+	defer func() {
+		fmt.Printf("Đóng kết nối user %d\n", receiverID)
+		RemoveConnectionFromRoomChatNoti(roomID)
+		conn.Close()
+	}()
+
+	response := model.EventResponse{
+		Event:  "join_noti_room_response",
+		Status: "success",
+		Data: model.JoinRoomDataResponse{
+			RoomID:    roomID,
+			TimeStamp: time.Now(),
+		},
+	}
+
+	for {
+		RegisterConnectionToRoomNoti(roomID, conn)
+
+		sendMessageNoti(roomID, response)
+
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			fmt.Println("Error:", err)
+			break
+		}
+	}
+}
+
+func SendNoti(ctx context.Context, notis []map[string]string) error {
+	fmt.Println("")
+	fmt.Println("-----Bắt đầu gửi batch noti-----")
+
+	var domainNotis []model.NotiSend
+
+	timeLayout := "2006-01-02 15:04:05.999999999 -0700 MST"
+
+	for _, value := range notis {
+		ID, _ := strconv.Atoi(value["ID"])
+		senderID, _ := strconv.Atoi(value["senderID"])
+		receiverID, _ := strconv.Atoi(value["receiverID"])
+		targetID, _ := strconv.Atoi(value["targetID"])
+		createdAt, _ := time.Parse(timeLayout, value["createdAt"])
+		isRead, _ := strconv.Atoi(value["isRead"])
+
+		domainNotis = append(domainNotis, model.NotiSend{
+			ID:         uint(ID),
+			SenderID:   uint(senderID),
+			ReceiverID: uint(receiverID),
+			Type:       value["type"],
+			TargetType: value["targetType"],
+			TargetID:   uint(targetID),
+			Content:    value["content"],
+			IsRead:     isRead != 0,
+			CreatedAt:  createdAt,
+		})
+	}
+
+	for _, value := range domainNotis {
+		fmt.Println("")
+		fmt.Println("-----")
+		fmt.Println("Thông báo đến: " + strconv.Itoa(int(value.ReceiverID)))
+		fmt.Println("Nội dung thông báo: " + value.Content)
+
+		roomID := GenerateNotiRoomID(value.ReceiverID)
+
+		response := model.EventResponse{
+			Event:  "receive_noti_response",
+			Status: "success",
+			Data:   value,
+		}
+
+		sendMessageNoti(roomID, response)
+
+		fmt.Println("-----")
+		fmt.Println("")
+	}
+
+	fmt.Println("-----Kết thúc gửi batch noti-----")
+	fmt.Println("")
+
+	return nil
+}
+
 // Hàm gửi tin nhắn đến thông báo của user khác
 func sendMessageNoti(roomID string, response model.EventResponse) {
 	//Kiểm tra room có tồn tại hay không
@@ -409,10 +522,40 @@ func sendMessageNoti(roomID string, response model.EventResponse) {
 	fmt.Println("---Gửi tin nhắn thông báo xong---")
 }
 
+// Hàm gửi tin nhắn đến thông báo của user khác
+func sendMessageChatNoti(roomID string, response model.EventResponse) {
+	//Kiểm tra room có tồn tại hay không
+	val, ok := roomChatNoti.Load(roomID)
+	if !ok {
+		fmt.Println("Room not found:", roomID)
+		return
+	}
+
+	conn := val.(*websocket.Conn)
+
+	fmt.Println("---Gửi tin nhắn thông báo đến:", roomID)
+
+	//Ép thành JSON
+	data, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println("Marshal error:", err)
+		return
+	}
+
+	fmt.Println("Tìm thấy room:", roomID)
+	fmt.Println("Gửi tin nhắn thông báo:", string(data))
+
+	if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+		fmt.Println("Send error", ":", err)
+	}
+
+	fmt.Println("---Gửi tin nhắn thông báo xong---")
+}
+
 // Hàm gửi tin nhắn đến chính mình
 func sendMessageMyself(roomID string, senderID uint, response model.EventResponse) {
 	//Kiểm tra room có tồn tại hay không
-	val, ok := roomStore.Load(roomID)
+	val, ok := roomChatOneOne.Load(roomID)
 	if !ok {
 		fmt.Println("Room not found:", roomID)
 		return
@@ -452,7 +595,7 @@ func sendMessageMyself(roomID string, senderID uint, response model.EventRespons
 // Hàm gửi tin nhắn đến các connect khác
 func sendMessageOther(roomID string, senderID uint, response model.EventResponse) (int, bool) {
 	//Kiểm tra room có tồn tại hay không
-	val, ok := roomStore.Load(roomID)
+	val, ok := roomChatOneOne.Load(roomID)
 	if !ok {
 		fmt.Println("Room not found:", roomID)
 		return 0, false
