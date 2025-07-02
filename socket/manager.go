@@ -20,7 +20,7 @@ var roomChatNoti sync.Map
 var roomNoti sync.Map
 
 func StartPingAllRooms() {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 
 	go func() {
 		for {
