@@ -499,15 +499,17 @@ func SendNoti(ctx context.Context, notis []map[string]string) error {
 		isRead, _ := strconv.Atoi(value["isRead"])
 
 		domainNotis = append(domainNotis, model.NotiSend{
-			ID:         uint(ID),
-			SenderID:   uint(senderID),
-			ReceiverID: uint(receiverID),
-			Type:       value["type"],
-			TargetType: value["targetType"],
-			TargetID:   uint(targetID),
-			Content:    value["content"],
-			IsRead:     isRead != 0,
-			CreatedAt:  createdAt,
+			ID:           uint(ID),
+			SenderID:     uint(senderID),
+			SenderName:   value["senderName"],
+			ReceiverID:   uint(receiverID),
+			ReceiverName: value["receiverName"],
+			Type:         value["type"],
+			TargetType:   value["targetType"],
+			TargetID:     uint(targetID),
+			Content:      value["content"],
+			IsRead:       isRead != 0,
+			CreatedAt:    createdAt,
 		})
 	}
 
