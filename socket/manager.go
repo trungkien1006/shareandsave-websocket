@@ -522,23 +522,41 @@ func SendNoti(ctx context.Context, notis []map[string]string) error {
 	}
 
 	for _, value := range domainNotis {
-		roomID := GenerateNotiRoomID(value.ReceiverID)
+		if value.ReceiverID != 0 {
+			roomID := GenerateNotiRoomID(value.ReceiverID)
 
-		fmt.Println("")
-		fmt.Println("-----")
-		fmt.Println("Thông báo đến: " + roomID)
-		fmt.Println("Nội dung thông báo: " + value.Content)
+			fmt.Println("")
+			fmt.Println("-----")
+			fmt.Println("Thông báo đến: " + roomID)
+			fmt.Println("Nội dung thông báo: " + value.Content)
 
-		response := model.EventResponse{
-			Event:  "receive_noti_response",
-			Status: "success",
-			Data:   value,
+			response := model.EventResponse{
+				Event:  "receive_noti_response",
+				Status: "success",
+				Data:   value,
+			}
+
+			sendMessageNoti(roomID, response)
+
+			fmt.Println("-----")
+			fmt.Println("")
+		} else {
+			fmt.Println("")
+			fmt.Println("-----")
+			fmt.Println("Gửi thông báo đến toàn hệ thống")
+			fmt.Println("Nội dung thông báo: " + value.Content)
+
+			response := model.EventResponse{
+				Event:  "receive_noti_response",
+				Status: "success",
+				Data:   value,
+			}
+
+			sendMessageNotiToAllRooms(response)
+
+			fmt.Println("-----")
+			fmt.Println("")
 		}
-
-		sendMessageNoti(roomID, response)
-
-		fmt.Println("-----")
-		fmt.Println("")
 	}
 
 	fmt.Println("-----Kết thúc gửi batch noti-----")
@@ -575,6 +593,37 @@ func sendMessageNoti(roomID string, response model.EventResponse) {
 	}
 
 	fmt.Println("---Gửi tin nhắn thông báo xong---")
+}
+
+func sendMessageNotiToAllRooms(response model.EventResponse) {
+	// Ép response thành JSON
+	data, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println("Marshal error:", err)
+		return
+	}
+
+	// Duyệt qua toàn bộ các room đang kết nối trong roomNoti
+	roomNoti.Range(func(key, value interface{}) bool {
+		roomID := key.(string)
+		conn := value.(*websocket.Conn)
+
+		fmt.Println("→ Gửi tin nhắn đến room:", roomID)
+
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			fmt.Println("Gửi lỗi đến", roomID, ":", err)
+
+			// Xử lý nếu connection đã đóng hoặc lỗi
+			conn.Close()
+			roomNoti.Delete(roomID)
+		} else {
+			fmt.Println("✓ Gửi thành công đến:", roomID)
+		}
+
+		return true // tiếp tục vòng lặp
+	})
+
+	fmt.Println("↪ Gửi xong thông báo đến tất cả roomNoti.")
 }
 
 // Hàm gửi tin nhắn đến thông báo của user khác
