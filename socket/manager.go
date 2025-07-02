@@ -44,9 +44,11 @@ func StartPingAllRooms() {
 			// Ping roomChatNoti
 			roomChatNoti.Range(func(roomID, conn any) bool {
 				c := conn.(*websocket.Conn)
+				rID := roomID.(string)
 				err := c.WriteMessage(websocket.PingMessage, nil)
 				if err != nil {
-					log.Printf("Error ping roomChatNoti (%s): %v\n", roomID, err)
+					log.Printf("Error ping roomChatNoti (%s): %v\n", rID, err)
+					RemoveConnectionFromRoomChatNoti(rID)
 				}
 				return true
 			})
@@ -54,9 +56,11 @@ func StartPingAllRooms() {
 			// Ping roomNoti
 			roomNoti.Range(func(roomID, conn any) bool {
 				c := conn.(*websocket.Conn)
+				rID := roomID.(string)
 				err := c.WriteMessage(websocket.PingMessage, nil)
 				if err != nil {
-					log.Printf("Error ping roomNoti (%s): %v\n", roomID, err)
+					log.Printf("Error ping roomNoti (%s): %v\n", rID, err)
+					RemoveConnectionFromRoomNoti(rID)
 				}
 				return true
 			})
