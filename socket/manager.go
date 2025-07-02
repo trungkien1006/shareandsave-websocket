@@ -19,6 +19,51 @@ var roomChatOneOne sync.Map // map[string]map[*websocket.Conn]int
 var roomChatNoti sync.Map
 var roomNoti sync.Map
 
+func StartPingAllRooms() {
+	ticker := time.NewTicker(30 * time.Second)
+
+	go func() {
+		for {
+			<-ticker.C
+			log.Println("[PING] Sending ping to all connections...")
+
+			// Ping roomChatOneOne
+			roomChatOneOne.Range(func(roomID, usersMap any) bool {
+				users := usersMap.(*sync.Map)
+				users.Range(func(_, conn any) bool {
+					c := conn.(*websocket.Conn)
+					err := c.WriteMessage(websocket.PingMessage, nil)
+					if err != nil {
+						log.Printf("Error ping roomChatOneOne (%s): %v\n", roomID, err)
+					}
+					return true
+				})
+				return true
+			})
+
+			// Ping roomChatNoti
+			roomChatNoti.Range(func(roomID, conn any) bool {
+				c := conn.(*websocket.Conn)
+				err := c.WriteMessage(websocket.PingMessage, nil)
+				if err != nil {
+					log.Printf("Error ping roomChatNoti (%s): %v\n", roomID, err)
+				}
+				return true
+			})
+
+			// Ping roomNoti
+			roomNoti.Range(func(roomID, conn any) bool {
+				c := conn.(*websocket.Conn)
+				err := c.WriteMessage(websocket.PingMessage, nil)
+				if err != nil {
+					log.Printf("Error ping roomNoti (%s): %v\n", roomID, err)
+				}
+				return true
+			})
+		}
+	}()
+}
+
 func GenerateChatRoomID(interestID uint) string {
 	return "chat:interest:" + strconv.Itoa(int(interestID))
 }
@@ -467,12 +512,12 @@ func SendNoti(ctx context.Context, notis []map[string]string) error {
 	}
 
 	for _, value := range domainNotis {
+		roomID := GenerateNotiRoomID(value.ReceiverID)
+
 		fmt.Println("")
 		fmt.Println("-----")
-		fmt.Println("Thông báo đến: " + strconv.Itoa(int(value.ReceiverID)))
+		fmt.Println("Thông báo đến: " + roomID)
 		fmt.Println("Nội dung thông báo: " + value.Content)
-
-		roomID := GenerateNotiRoomID(value.ReceiverID)
 
 		response := model.EventResponse{
 			Event:  "receive_noti_response",
