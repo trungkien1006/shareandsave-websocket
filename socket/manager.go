@@ -178,7 +178,7 @@ func SendPublicMessageHandler(conn *websocket.Conn, senderID uint) {
 	}
 
 	for {
-		RegisterConnectionToRoomChatNoti(roomID, conn)
+		RegisterConnectionToRoomNoti(roomID, conn)
 
 		sendMessageChatNoti(roomID, response)
 
