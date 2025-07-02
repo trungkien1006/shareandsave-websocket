@@ -456,7 +456,7 @@ func JoinRoomNotiHandler(conn *websocket.Conn, receiverID uint) {
 	//Hàm hủy chạy sau khi hàm chính kết thúc
 	defer func() {
 		fmt.Printf("Đóng kết nối user %d\n", receiverID)
-		RemoveConnectionFromRoomChatNoti(roomID)
+		RemoveConnectionFromRoomNoti(roomID)
 		conn.Close()
 	}()
 
