@@ -152,5 +152,5 @@ func HandlerNoti(c *gin.Context) {
 
 	fmt.Println("User ID:", userID)
 
-	go socket.SendPublicMessageHandler(conn, uint(userID))
+	go socket.JoinRoomNotiHandler(conn, uint(userID))
 }
