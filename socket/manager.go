@@ -236,6 +236,8 @@ func SendPublicMessageHandler(conn *websocket.Conn, senderID uint) {
 			fmt.Println("Error:", err)
 			break
 		}
+
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"event":"keep_alive"}`))
 	}
 }
 
@@ -483,6 +485,8 @@ func JoinRoomNotiHandler(conn *websocket.Conn, receiverID uint) {
 			fmt.Println("Error:", err)
 			break
 		}
+
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"event":"keep_alive"}`))
 	}
 }
 
