@@ -226,11 +226,11 @@ func SendPublicMessageHandler(conn *websocket.Conn, senderID uint) {
 		},
 	}
 
+	RegisterConnectionToRoomNoti(roomID, conn)
+
+	sendMessageChatNoti(roomID, response)
+
 	for {
-		RegisterConnectionToRoomNoti(roomID, conn)
-
-		sendMessageChatNoti(roomID, response)
-
 		_, _, err := conn.ReadMessage()
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -473,11 +473,11 @@ func JoinRoomNotiHandler(conn *websocket.Conn, receiverID uint) {
 		},
 	}
 
+	RegisterConnectionToRoomNoti(roomID, conn)
+
+	sendMessageNoti(roomID, response)
+
 	for {
-		RegisterConnectionToRoomNoti(roomID, conn)
-
-		sendMessageNoti(roomID, response)
-
 		_, _, err := conn.ReadMessage()
 		if err != nil {
 			fmt.Println("Error:", err)
