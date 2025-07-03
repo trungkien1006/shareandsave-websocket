@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"time"
 	"websocket/helpers"
 	"websocket/socket"
 
@@ -18,13 +17,13 @@ var upgrader = websocket.Upgrader{
 	}, // Chấp nhận mọi origin (có thể điều chỉnh)
 }
 
-func SetupConnectionKeepAlive(conn *websocket.Conn) {
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	conn.SetPongHandler(func(appData string) error {
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
-}
+// func SetupConnectionKeepAlive(conn *websocket.Conn) {
+// 	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+// 	conn.SetPongHandler(func(appData string) error {
+// 		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+// 		return nil
+// 	})
+// }
 
 func HandleChatOneOnOne(c *gin.Context) {
 	// Nếu middleware đã dừng, kiểm tra và phản hồi tại đây
@@ -69,7 +68,7 @@ func HandleChatOneOnOne(c *gin.Context) {
 
 	fmt.Println("User ID:", userID)
 
-	SetupConnectionKeepAlive(conn)
+	// SetupConnectionKeepAlive(conn)
 
 	go socket.ReadMessageHandler(conn, uint(userID))
 }
@@ -117,7 +116,7 @@ func HandleChatNoti(c *gin.Context) {
 
 	fmt.Println("User ID:", userID)
 
-	SetupConnectionKeepAlive(conn)
+	// SetupConnectionKeepAlive(conn)
 
 	go socket.SendPublicMessageHandler(conn, uint(userID))
 }
@@ -165,7 +164,7 @@ func HandlerNoti(c *gin.Context) {
 
 	fmt.Println("User ID:", userID)
 
-	SetupConnectionKeepAlive(conn)
+	// SetupConnectionKeepAlive(conn)
 
 	go socket.JoinRoomNotiHandler(conn, uint(userID))
 }
