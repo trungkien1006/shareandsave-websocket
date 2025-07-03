@@ -496,7 +496,7 @@ func SendNoti(ctx context.Context, notis []map[string]string) error {
 
 	var domainNotis []model.NotiSend
 
-	timeLayout := "2006-01-02 15:04:05.999999999 -0700 MST"
+	timeLayout := "2006-01-02 15:04:05 -0700 MST"
 
 	for _, value := range notis {
 		ID, _ := strconv.Atoi(value["ID"])
