@@ -5,7 +5,6 @@ import (
 	"websocket/handler"
 	"websocket/helpers"
 	"websocket/middleware"
-	"websocket/socket"
 	"websocket/worker"
 
 	"github.com/gin-gonic/gin"
@@ -23,11 +22,11 @@ func SetupRouter() *gin.Engine {
 	//run chat worker
 	streamConsumer := worker.NewStreamConsumer(helpers.RedisClient, stream, group, consumer)
 	streamConsumer.CreateConsumerGroup()
-	chatHandler := handler.NewNotiHandler(streamConsumer)
+	notiHandler := handler.NewNotiHandler(streamConsumer)
 
-	go chatHandler.Run(ctx)
+	go notiHandler.Run(ctx)
 
-	go socket.StartPingAllRooms()
+	// go socket.StartPingAllRooms()
 
 	r.GET("/chat", middleware.AuthGuard(), handler.HandleChatOneOnOne)
 	r.GET("/chat-noti", middleware.AuthGuard(), handler.HandleChatNoti)
