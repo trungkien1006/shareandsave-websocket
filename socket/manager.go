@@ -19,54 +19,54 @@ var roomChatOneOne sync.Map // map[string]map[*websocket.Conn]int
 var roomChatNoti sync.Map
 var roomNoti sync.Map
 
-func StartPingAllRooms() {
-	ticker := time.NewTicker(10 * time.Second)
+// func StartPingAllRooms() {
+// 	ticker := time.NewTicker(10 * time.Second)
 
-	go func() {
-		for {
-			<-ticker.C
-			log.Println("[PING] Sending ping to all connections...")
+// 	go func() {
+// 		for {
+// 			<-ticker.C
+// 			log.Println("[PING] Sending ping to all connections...")
 
-			// Ping roomChatOneOne
-			roomChatOneOne.Range(func(roomID, usersMap any) bool {
-				users := usersMap.(*sync.Map)
-				users.Range(func(_, conn any) bool {
-					c := conn.(*websocket.Conn)
-					err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
-					if err != nil {
-						log.Printf("Error ping roomChatOneOne (%s): %v\n", roomID, err)
-					}
-					return true
-				})
-				return true
-			})
+// 			// Ping roomChatOneOne
+// 			roomChatOneOne.Range(func(roomID, usersMap any) bool {
+// 				users := usersMap.(*sync.Map)
+// 				users.Range(func(_, conn any) bool {
+// 					c := conn.(*websocket.Conn)
+// 					err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
+// 					if err != nil {
+// 						log.Printf("Error ping roomChatOneOne (%s): %v\n", roomID, err)
+// 					}
+// 					return true
+// 				})
+// 				return true
+// 			})
 
-			// Ping roomChatNoti
-			roomChatNoti.Range(func(roomID, conn any) bool {
-				c := conn.(*websocket.Conn)
-				rID := roomID.(string)
-				err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
-				if err != nil {
-					log.Printf("Error ping roomChatNoti (%s): %v\n", rID, err)
-					RemoveConnectionFromRoomChatNoti(rID)
-				}
-				return true
-			})
+// 			// Ping roomChatNoti
+// 			roomChatNoti.Range(func(roomID, conn any) bool {
+// 				c := conn.(*websocket.Conn)
+// 				rID := roomID.(string)
+// 				err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
+// 				if err != nil {
+// 					log.Printf("Error ping roomChatNoti (%s): %v\n", rID, err)
+// 					RemoveConnectionFromRoomChatNoti(rID)
+// 				}
+// 				return true
+// 			})
 
-			// Ping roomNoti
-			roomNoti.Range(func(roomID, conn any) bool {
-				c := conn.(*websocket.Conn)
-				rID := roomID.(string)
-				err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
-				if err != nil {
-					log.Printf("Error ping roomNoti (%s): %v\n", rID, err)
-					RemoveConnectionFromRoomNoti(rID)
-				}
-				return true
-			})
-		}
-	}()
-}
+// 			// Ping roomNoti
+// 			roomNoti.Range(func(roomID, conn any) bool {
+// 				c := conn.(*websocket.Conn)
+// 				rID := roomID.(string)
+// 				err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
+// 				if err != nil {
+// 					log.Printf("Error ping roomNoti (%s): %v\n", rID, err)
+// 					RemoveConnectionFromRoomNoti(rID)
+// 				}
+// 				return true
+// 			})
+// 		}
+// 	}()
+// }
 
 func GenerateChatRoomID(interestID uint) string {
 	return "chat:interest:" + strconv.Itoa(int(interestID))
@@ -309,6 +309,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 				numUser, isSended := sendMessageOther(roomID, senderID, response)
 
 				fmt.Println("----Send message status:", isSended)
+				fmt.Println("----Send message receiverID:", data.UserID)
 
 				if isSended {
 					sendMessageMyself(roomID, senderID, response)
