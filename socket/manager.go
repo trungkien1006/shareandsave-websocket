@@ -305,7 +305,7 @@ func ReadMessageHandler(conn *websocket.Conn, senderID uint) {
 
 					sendMessageToRedis(redisMessage)
 
-					sendMessageNoti(roomChatNoti, notiResponse)
+					sendMessageChatNoti(roomChatNoti, notiResponse)
 				} else {
 					response.Status = "error"
 					response.Data = nil
