@@ -19,55 +19,6 @@ var roomChatOneOne sync.Map // map[string]map[*websocket.Conn]int
 var roomChatNoti sync.Map
 var roomNoti sync.Map
 
-// func StartPingAllRooms() {
-// 	ticker := time.NewTicker(10 * time.Second)
-
-// 	go func() {
-// 		for {
-// 			<-ticker.C
-// 			log.Println("[PING] Sending ping to all connections...")
-
-// 			// Ping roomChatOneOne
-// 			roomChatOneOne.Range(func(roomID, usersMap any) bool {
-// 				users := usersMap.(*sync.Map)
-// 				users.Range(func(_, conn any) bool {
-// 					c := conn.(*websocket.Conn)
-// 					err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
-// 					if err != nil {
-// 						log.Printf("Error ping roomChatOneOne (%s): %v\n", roomID, err)
-// 					}
-// 					return true
-// 				})
-// 				return true
-// 			})
-
-// 			// Ping roomChatNoti
-// 			roomChatNoti.Range(func(roomID, conn any) bool {
-// 				c := conn.(*websocket.Conn)
-// 				rID := roomID.(string)
-// 				err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
-// 				if err != nil {
-// 					log.Printf("Error ping roomChatNoti (%s): %v\n", rID, err)
-// 					RemoveConnectionFromRoomChatNoti(rID)
-// 				}
-// 				return true
-// 			})
-
-// 			// Ping roomNoti
-// 			roomNoti.Range(func(roomID, conn any) bool {
-// 				c := conn.(*websocket.Conn)
-// 				rID := roomID.(string)
-// 				err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
-// 				if err != nil {
-// 					log.Printf("Error ping roomNoti (%s): %v\n", rID, err)
-// 					RemoveConnectionFromRoomNoti(rID)
-// 				}
-// 				return true
-// 			})
-// 		}
-// 	}()
-// }
-
 func GenerateChatRoomID(interestID uint) string {
 	return "chat:interest:" + strconv.Itoa(int(interestID))
 }
@@ -92,7 +43,7 @@ func RegisterConnectionToRoomChatNoti(roomID string, conn *websocket.Conn) {
 	}
 }
 
-// Hàm tạo room public chat noti cho mỗi user
+// Hàm tạo room public noti cho mỗi user
 func RegisterConnectionToRoomNoti(roomID string, conn *websocket.Conn) {
 	//Lấy ra mảng của roomID, nếu chưa thì tạo
 	_, loaded := roomNoti.LoadOrStore(roomID, conn)
@@ -110,7 +61,7 @@ func RemoveConnectionFromRoomChatNoti(roomID string) {
 	fmt.Println("---Xóa room: " + roomID)
 }
 
-// Hàm xóa room public chat noti
+// Hàm xóa room public noti
 func RemoveConnectionFromRoomNoti(roomID string) {
 	roomNoti.Delete(roomID)
 	fmt.Println("---Xóa room: " + roomID)
@@ -226,7 +177,7 @@ func SendPublicMessageHandler(conn *websocket.Conn, senderID uint) {
 		},
 	}
 
-	RegisterConnectionToRoomNoti(roomID, conn)
+	RegisterConnectionToRoomChatNoti(roomID, conn)
 
 	sendMessageChatNoti(roomID, response)
 
@@ -778,3 +729,52 @@ func sendMessageToRedis(data model.RedisMessageSend) {
 
 	fmt.Println("---Gửi tin nhắn vào redis stream hoàn tất")
 }
+
+// func StartPingAllRooms() {
+// 	ticker := time.NewTicker(10 * time.Second)
+
+// 	go func() {
+// 		for {
+// 			<-ticker.C
+// 			log.Println("[PING] Sending ping to all connections...")
+
+// 			// Ping roomChatOneOne
+// 			roomChatOneOne.Range(func(roomID, usersMap any) bool {
+// 				users := usersMap.(*sync.Map)
+// 				users.Range(func(_, conn any) bool {
+// 					c := conn.(*websocket.Conn)
+// 					err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
+// 					if err != nil {
+// 						log.Printf("Error ping roomChatOneOne (%s): %v\n", roomID, err)
+// 					}
+// 					return true
+// 				})
+// 				return true
+// 			})
+
+// 			// Ping roomChatNoti
+// 			roomChatNoti.Range(func(roomID, conn any) bool {
+// 				c := conn.(*websocket.Conn)
+// 				rID := roomID.(string)
+// 				err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
+// 				if err != nil {
+// 					log.Printf("Error ping roomChatNoti (%s): %v\n", rID, err)
+// 					RemoveConnectionFromRoomChatNoti(rID)
+// 				}
+// 				return true
+// 			})
+
+// 			// Ping roomNoti
+// 			roomNoti.Range(func(roomID, conn any) bool {
+// 				c := conn.(*websocket.Conn)
+// 				rID := roomID.(string)
+// 				err := c.WriteControl(websocket.PingMessage, nil, time.Now().Add(15*time.Second))
+// 				if err != nil {
+// 					log.Printf("Error ping roomNoti (%s): %v\n", rID, err)
+// 					RemoveConnectionFromRoomNoti(rID)
+// 				}
+// 				return true
+// 			})
+// 		}
+// 	}()
+// }
