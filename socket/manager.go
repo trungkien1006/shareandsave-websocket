@@ -451,13 +451,15 @@ func SendNoti(ctx context.Context, notis []map[string]string) error {
 	timeLayout := "2006-01-02T15:04:05.000Z07:00"
 
 	for _, value := range notis {
+		log.Println("++++++++Time: " + value["createdAt"])
+
 		ID, _ := strconv.Atoi(value["ID"])
 		senderID, _ := strconv.Atoi(value["senderID"])
 		receiverID, _ := strconv.Atoi(value["receiverID"])
 		targetID, _ := strconv.Atoi(value["targetID"])
 		createdAt, _ := time.Parse(timeLayout, value["createdAt"])
 		isRead, _ := strconv.Atoi(value["isRead"])
-
+		log.Println("++++++++Time converted : " + createdAt.String())
 		domainNotis = append(domainNotis, model.NotiSend{
 			ID:           uint(ID),
 			SenderID:     uint(senderID),
