@@ -8,11 +8,13 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"websocket/grpcpb"
 	"websocket/helpers"
 	"websocket/model"
 
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var roomChatOneOne sync.Map // map[string]map[*websocket.Conn]int
@@ -720,7 +722,7 @@ func sendMessageToRedis(data model.RedisMessageSend) {
 
 	fmt.Println("---Gửi tin nhắn vào redis stream")
 
-	helpers.RedisClient.XAdd(ctx, &redis.XAddArgs{
+	cmd := helpers.RedisClient.XAdd(ctx, &redis.XAddArgs{
 		Stream: "chatstream",
 		Values: map[string]interface{}{
 			"interestID": data.InterestID,
@@ -731,6 +733,31 @@ func sendMessageToRedis(data model.RedisMessageSend) {
 			"createdAt":  data.CreatedAt,
 		},
 	})
+
+	// Kiểm tra lỗi
+	if err := cmd.Err(); err != nil {
+		log.Printf("Redis XAdd error: %v", err)
+
+		resp, err := helpers.GRPCConn.StoreMessage(context.Background(), &grpcpb.InputMessage{
+			InterestId: uint64(data.InterestID),
+			SenderId:   uint64(data.SenderID),
+			ReceiverId: uint64(data.ReceiverID),
+			Content:    data.Content,
+			IsRead:     uint32(data.IsRead),
+			CreatedAt:  timestamppb.Now(),
+		})
+
+		// 4. Xử lý kết quả
+		if err != nil {
+			log.Fatalf("Gọi gRPC thất bại: %v", err)
+		}
+
+		log.Printf("Server trả về: code=%d, message=%s", resp.Code, resp.Message)
+
+		fmt.Println("---Gửi tin nhắn vào redis stream lỗi, fallback về call hàm gRPC")
+
+		return
+	}
 
 	fmt.Println("---Gửi tin nhắn vào redis stream hoàn tất")
 }
