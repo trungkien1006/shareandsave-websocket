@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -41,6 +42,7 @@ func (c *StreamConsumer) CreateConsumerGroup() {
 
 func (c *StreamConsumer) Consume(handler func(ctx context.Context, data []map[string]string) error) error {
 	ctx := context.Background()
+	var lastRedisErrorLog time.Time
 
 	for {
 		res, err := c.client.XReadGroup(ctx, &redis.XReadGroupArgs{
@@ -52,6 +54,17 @@ func (c *StreamConsumer) Consume(handler func(ctx context.Context, data []map[st
 		}).Result()
 
 		if err != nil && err != redis.Nil {
+			// Nếu là lỗi kết nối Redis thì delay và log cách quãng
+			if isRedisConnectionError(err) {
+				if time.Since(lastRedisErrorLog) > 10*time.Second {
+					log.Println("+++Redis connection error:", err)
+					lastRedisErrorLog = time.Now()
+				}
+				time.Sleep(2 * time.Second) // giảm tải retry
+				continue
+			}
+
+			// Log các lỗi khác
 			log.Println("+++Error reading from stream:", err)
 			continue
 		}
@@ -156,4 +169,15 @@ func ValuesToString(msg redis.XMessage) map[string]string {
 		result[k] = v.(string)
 	}
 	return result
+}
+
+func isRedisConnectionError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "connection refused") ||
+		strings.Contains(msg, "connect: cannot assign requested address") ||
+		strings.Contains(msg, "connect: connection reset") ||
+		strings.Contains(msg, "dial tcp")
 }
